@@ -18,24 +18,39 @@ if [[ ! -f "$HOME/.grsim.xml" ]]; then
   chmod 644 "$HOME/.grsim.xml" || true
 fi
 
-if [[ "$1" == "vnc" ]]; then
+if [[ "${1:-}" == "vnc" ]]; then
   shift
   echo "Launch in VNC mode"
 
   : "${VNC_PASSWORD:=vncpassword}"
   : "${VNC_GEOMETRY:=1280x1024}"
 
-  mkdir -p ~/.vnc
-  x11vnc -storepasswd "${VNC_PASSWORD}" ~/.vnc/passwd
+  mkdir -p "$HOME/.vnc"
+  x11vnc -storepasswd "${VNC_PASSWORD}" "$HOME/.vnc/passwd"
 
   export DISPLAY=:99
-  Xvfb :99 -screen 0 "${VNC_GEOMETRY}x24" -dpi 96 -ac +extension GLX +render -noreset &
+
+  Xvfb "$DISPLAY" -screen 0 "${VNC_GEOMETRY}x24" -dpi 96 -ac +extension GLX +render -noreset &
+  XVFB_PID=$!
+
+  for i in $(seq 1 80); do
+    if xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+  done
+
+  if ! xdpyinfo -display "$DISPLAY" >/dev/null 2>&1; then
+    echo "ERROR: Xvfb did not start on $DISPLAY"
+    ps aux | grep -E 'Xvfb|x11vnc|FIRASim' || true
+    exit 1
+  fi
 
   /usr/local/bin/FIRASim "$@" &
 
-  exec x11vnc -forever -shared -usepw -display :99 -rfbport 5900 -noxdamage
+  exec x11vnc -forever -shared -usepw -display "$DISPLAY" -rfbport 5900 -noxdamage
 
-elif [[ -n "$DISPLAY" ]]; then
+elif [[ -n "${DISPLAY:-}" ]]; then
   echo "Launch with host X11 display: $DISPLAY"
   exec /usr/local/bin/FIRASim "$@"
 

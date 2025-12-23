@@ -23,7 +23,7 @@ RUN git clone https://github.com/jpfeltracco/vartypes.git . && \
     mkdir -p build && \
     cd build && \
     cmake .. && \
-    make -j"$(nproc)" && \
+    make && \
     make install && \
     ldconfig
 
@@ -46,8 +46,10 @@ COPY config/*.ini /usr/local/share/grsim/config/
 RUN mkdir -p build && \
     cd build && \
     cmake -DCMAKE_INSTALL_PREFIX=/usr/local .. && \
-    make -j"$(nproc)" && \
-    make install
+    make && \
+    make install && \
+    ldconfig
+
 
 FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -59,7 +61,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libqt5opengl5 \
         libode8 \
         libprotobuf17 \
-        x11vnc xvfb \
+        xvfb \
+        x11vnc \
+        x11-utils \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /usr/local /usr/local
