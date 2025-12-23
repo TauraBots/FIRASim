@@ -216,22 +216,49 @@ void ConfigWidget::loadRobotsSettings()
 
 void ConfigWidget::loadRobotSettings(const QString&& team)
 {
-    QString ss = qApp->applicationDirPath()+QString("/../config/")+QString("%1.ini").arg(team);
-    robot_settings = new QSettings(ss, QSettings::IniFormat);
-    robotSettings.RobotCenterFromKicker = robot_settings->value("Geometery/CenterFromKicker", 0.073).toDouble();
-    robotSettings.RobotRadius = robot_settings->value("Geometery/Radius", 0.09).toDouble();
-    robotSettings.RobotHeight = robot_settings->value("Geometery/Height", 0.13).toDouble();
-    robotSettings.BottomHeight = robot_settings->value("Geometery/RobotBottomZValue", 0.02).toDouble();
-    robotSettings.WheelRadius = robot_settings->value("Geometery/WheelRadius", 0.0325).toDouble();
-    robotSettings.WheelThickness = robot_settings->value("Geometery/WheelThickness", 0.005).toDouble();
-    robotSettings.Wheel1Angle = robot_settings->value("Geometery/Wheel1Angle", 60).toDouble();
-    robotSettings.Wheel2Angle = robot_settings->value("Geometery/Wheel2Angle", 135).toDouble();
-    robotSettings.BallRadius = robot_settings->value("Geometery/BallRadius", 0.002).toDouble();
-    robotSettings.BallMass = robot_settings->value("Geometery/BallMass", 0.001).toDouble();
+    const QString iniName = QString("%1.ini").arg(team);
+    QStringList candidates;
 
-    robotSettings.BodyMass  = robot_settings->value("Physics/BodyMass", 2).toDouble();
-    robotSettings.WheelMass = robot_settings->value("Physics/WheelMass", 0.2).toDouble();
-    robotSettings.WheelTangentFriction = robot_settings->value("Physics/WheelTangentFriction", 0.8f).toDouble();
-    robotSettings.WheelPerpendicularFriction = robot_settings->value("Physics/WheelPerpendicularFriction", 0.05f).toDouble();
-    robotSettings.Wheel_Motor_FMax = robot_settings->value("Physics/WheelMotorMaximumApplyingTorque", 0.2f).toDouble();
+    candidates << (qApp->applicationDirPath() + "/../config/" + iniName);
+    candidates << (qApp->applicationDirPath() + "/../share/grsim/config/" + iniName);
+    candidates << (QString("/usr/local/share/grsim/config/") + iniName);
+    candidates << (QString("/usr/local/config/") + iniName);
+    candidates << (qApp->applicationDirPath() + "/config/" + iniName);
+    candidates << (QDir::homePath() + "/.grsim/config/" + iniName);
+
+    QString ss;
+    for (const auto& p : candidates) {
+        if (QFileInfo::exists(p)) {
+            ss = QDir::cleanPath(p);
+            break;
+        }
+    }
+
+    if (ss.isEmpty()) {
+        ss = qApp->applicationDirPath() + "/../config/" + iniName;
+        qWarning() << "[FIRASim] Could not find robot ini for team" << team
+                   << "Tried:" << candidates;
+    } else {
+        qDebug() << "[FIRASim] Using robot ini:" << ss;
+    }
+
+    delete robot_settings;
+    robot_settings = new QSettings(ss, QSettings::IniFormat);
+
+    robotSettings.RobotCenterFromKicker = robot_settings->value("Geometery/CenterFromKicker", 0.073).toDouble();
+    robotSettings.RobotRadius           = robot_settings->value("Geometery/Radius", 0.09).toDouble();
+    robotSettings.RobotHeight           = robot_settings->value("Geometery/Height", 0.13).toDouble();
+    robotSettings.BottomHeight          = robot_settings->value("Geometery/RobotBottomZValue", 0.02).toDouble();
+    robotSettings.WheelRadius           = robot_settings->value("Geometery/WheelRadius", 0.0325).toDouble();
+    robotSettings.WheelThickness        = robot_settings->value("Geometery/WheelThickness", 0.005).toDouble();
+    robotSettings.Wheel1Angle           = robot_settings->value("Geometery/Wheel1Angle", 60).toDouble();
+    robotSettings.Wheel2Angle           = robot_settings->value("Geometery/Wheel2Angle", 135).toDouble();
+    robotSettings.BallRadius            = robot_settings->value("Geometery/BallRadius", 0.002).toDouble();
+    robotSettings.BallMass              = robot_settings->value("Geometery/BallMass", 0.001).toDouble();
+
+    robotSettings.BodyMass              = robot_settings->value("Physics/BodyMass", 2).toDouble();
+    robotSettings.WheelMass             = robot_settings->value("Physics/WheelMass", 0.2).toDouble();
+    robotSettings.WheelTangentFriction  = robot_settings->value("Physics/WheelTangentFriction", 0.8).toDouble();
+    robotSettings.WheelPerpendicularFriction = robot_settings->value("Physics/WheelPerpendicularFriction", 0.05).toDouble();
+    robotSettings.Wheel_Motor_FMax      = robot_settings->value("Physics/WheelMotorMaximumApplyingTorque", 0.2).toDouble();
 }
